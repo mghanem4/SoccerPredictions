@@ -1,0 +1,193 @@
+Running models...
+Removing feature: Take-Ons Succ (p-value: 0.5343962119150729, VIF: 1.916032307292986)
+Removing feature: Receiving Rec (p-value: 0.29446265231431634, VIF: 56.11300441995322)
+Removing feature: Carries Carries (p-value: 0.33935206008672225, VIF: 11.117225664329277)
+Removing feature: Carries 1/3 (p-value: 0.21154589200719015, VIF: 6.226065470891639)
+                            OLS Regression Results                            
+==============================================================================
+Dep. Variable:                     GF   R-squared:                       0.690
+Model:                            OLS   Adj. R-squared:                  0.677
+Method:                 Least Squares   F-statistic:                     53.35
+Date:                Mon, 30 Dec 2024   Prob (F-statistic):           2.88e-18
+Time:                        01:55:45   Log-Likelihood:                -225.48
+No. Observations:                  76   AIC:                             459.0
+Df Residuals:                      72   BIC:                             468.3
+Df Model:                           3                                         
+Covariance Type:            nonrobust                                         
+===================================================================================
+                      coef    std err          t      P>|t|      [0.025      0.975]
+-----------------------------------------------------------------------------------
+const              -9.9428      2.965     -3.354      0.001     -15.852      -4.033
+Touches Mid 3rd     0.0052      0.001      5.072      0.000       0.003       0.007
+Touches Att 3rd    -0.0069      0.003     -2.566      0.012      -0.012      -0.002
+Touches Att Pen     0.0755      0.014      5.300      0.000       0.047       0.104
+==============================================================================
+Omnibus:                        0.931   Durbin-Watson:                   1.984
+Prob(Omnibus):                  0.628   Jarque-Bera (JB):                0.901
+Skew:                           0.254   Prob(JB):                        0.637
+Kurtosis:                       2.834   Cond. No.                     2.74e+04
+==============================================================================
+
+Notes:
+[1] Standard Errors assume that the covariance matrix of the errors is correctly specified.
+[2] The condition number is large, 2.74e+04. This might indicate that there are
+strong multicollinearity or other numerical problems.
+
+
+
+
+
+
+
+
+
+
+
+VIF for reduced model:
+          Variable       VIF
+0  Touches Mid 3rd  2.670479
+1  Touches Att 3rd  9.307427
+2  Touches Att Pen  6.356137
+Mean Squared Error on Test Set: 33.04
+
+
+
+
+
+
+
+
+
+
+
+Breusch-Pagan test:
+
+Breusch-Pagan p-value: 0.674
+Equality of Variance holds (homoscedasticity).
+Mean Squared Error on Test Set: 33.04
+R^2 Score: 0.58
+
+
+
+
+
+
+
+
+
+
+
+
+Predicted Values vs Actual Values
+    Actual  Predicted
+75      20  21.852410
+22      18  22.822161
+20      37  35.044896
+45      11  16.571376
+49      37  31.633709
+70      20  18.264010
+27      14  16.287799
+52      27  29.420804
+15      32  22.242699
+23      28  26.794175
+80      12  18.260023
+0       21  19.968316
+39      42  31.248705
+79      11  24.816380
+32      11  19.206465
+50      25  25.005953
+16      24  18.070094
+58      25  27.837771
+35      18  16.628457
+71      24  24.727038
+                  Lower CI  Upper CI
+const           -15.852476 -4.033167
+Touches Mid 3rd   0.003130  0.007184
+Touches Att 3rd  -0.012187 -0.001531
+Touches Att Pen   0.047096  0.103880
+Time taken: 0.98 seconds.
+00:00:00
+Decision Tree Mean Squared Error on Test Set: 94.95
+Decision Tree Predicted Values vs Actual Values
+    Actual  Predicted
+75      20       23.0
+22      18       23.0
+20      37       39.0
+45      11       17.0
+49      37       41.0
+70      20       29.0
+27      14       27.0
+52      27       27.0
+15      32       16.0
+23      28       20.0
+80      12       15.0
+0       21       32.0
+39      42       23.0
+79      11       32.0
+32      11       23.0
+50      25       29.0
+16      24       16.0
+58      25       32.0
+35      18       23.0
+71      24       21.0
+
+
+
+
+
+
+
+
+
+
+
+Feature Importance from Decision Tree:
+           Feature  Importance
+2  Touches Att Pen    0.662571
+0  Touches Mid 3rd    0.104052
+3    Take-Ons Succ    0.091934
+1  Touches Att 3rd    0.048298
+5      Carries 1/3    0.039178
+6    Receiving Rec    0.038213
+4  Carries Carries    0.015753
+Time taken: 0.16 seconds.
+00:00:00
+Mean Squared Error: 40.546730000000004
+Random Forest Predicted Values vs Actual Values
+    Actual  Predicted
+75      20      21.55
+22      18      21.16
+20      37      33.49
+45      11      17.81
+49      37      35.44
+70      20      23.10
+27      14      20.82
+52      27      28.29
+15      32      24.15
+23      28      26.30
+80      12      18.97
+0       21      20.22
+39      42      27.21
+79      11      22.59
+32      11      23.57
+50      25      25.08
+16      24      18.47
+58      25      28.36
+35      18      18.12
+71      24      20.40
+           Feature  Importance
+2  Touches Att Pen    0.385788
+1  Touches Att 3rd    0.184670
+5      Carries 1/3    0.120407
+6    Receiving Rec    0.095161
+3    Take-Ons Succ    0.075562
+0  Touches Mid 3rd    0.071316
+4  Carries Carries    0.067096
+Time taken: 1.61 seconds.
+00:00:01
+Mean Squared Error Comparison:
+MLR: 33.040941530720566
+Decision Tree: 94.95
+Random Forest: 40.546730000000004
+The best model is 33.040941530720566 with a MSE of 33.040941530720566
+Time taken to run all models: 4.297589063644409 seconds

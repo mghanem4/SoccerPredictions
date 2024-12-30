@@ -2,102 +2,81 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeRegressor
-from sklearn.metrics import mean_squared_error, r2_score
-from sklearn.tree import plot_tree
+from sklearn.metrics import mean_squared_error
+import os
+import time as t
 
-# load data
-df = pd.read_excel('gca.xlsx')
+def page_break(string: str):
+    print("\n" * 10)
+    print(string)
 
-# Convert both Age and SCA SCA90 to numeric, setting non-numeric values to NaN
-df['Age'] = pd.to_numeric(df['Age'], errors='coerce')
-df['SCA SCA90'] = pd.to_numeric(df['SCA SCA90'], errors='coerce')
-# Adding in SCA Types PassLive to the model, convert it to numeric and set non-numeric values to NaN
-df['SCA Types PassLive'] = pd.to_numeric(df['SCA Types PassLive'], errors='coerce')
-# Adding in 90s to the model, convert it to numeric and set non-numeric values to NaN
-df['90s'] = pd.to_numeric(df['90s'], errors='coerce')
-# Adding in SCA Types PassDead to the model, convert it to numeric and set non-numeric values to NaN
-df['SCA Types PassDead'] = pd.to_numeric(df['SCA Types PassDead'], errors='coerce')
-# Adding in 'GCA GCA90' to the model, convert it to numeric and set non-numeric values to NaN
-df['GCA GCA90'] = pd.to_numeric(df['GCA GCA90'], errors='coerce')
-# Adding in 'SCA Types Fld' to the model, convert it to numeric and set non-numeric values to NaN
-df['SCA Types Fld'] = pd.to_numeric(df['SCA Types Fld'], errors='coerce')
-# Adding in SCA Types Def to the model, convert it to numeric and set non-numeric values to NaN
-df['SCA Types Def'] = pd.to_numeric(df['SCA Types Def'], errors='coerce')
-# Adding in SCA SCA to the model, convert it to numeric and set non-numeric values to NaN
-df['SCA SCA'] = pd.to_numeric(df['SCA SCA'], errors='coerce')
-# Adding in SCA Types TO to the model, convert it to numeric and set non-numeric values to NaN
-df['SCA Types TO'] = pd.to_numeric(df['SCA Types TO'], errors='coerce')
-# Adding in GCA Types PassLive to the model, convert it to numeric and set non-numeric values to NaN
-df['GCA Types PassLive'] = pd.to_numeric(df['GCA Types PassLive'], errors='coerce')
-# Adding in GCA Types TO to the model, convert it to numeric and set non-numeric values to NaN
-df['GCA Types TO'] = pd.to_numeric(df['GCA Types TO'], errors='coerce')
-# Adding in GCA Types Sh to the model, convert it to numeric and set non-numeric values to NaN
-df['GCA Types Sh'] = pd.to_numeric(df['GCA Types Sh'], errors='coerce')
-# Adding in GCA Types Fld to the model, convert it to numeric and set non-numeric values to NaN
-df['GCA Types Fld'] = pd.to_numeric(df['GCA Types Fld'], errors='coerce')
-# Adding in GCA Types Def to the model, convert it to numeric and set non-numeric values to NaN
-df['GCA Types Def'] = pd.to_numeric(df['GCA Types Def'], errors='coerce')
+def train_decision_tree(X_train, y_train, X_test, y_test):
+    """Train and evaluate a Decision Tree Regressor, then return the model and its performance."""
+    # Train a Decision Tree Regressor model
+    dt_model = DecisionTreeRegressor(random_state=104)
+    dt_model.fit(X_train, y_train)
 
-upper_limit = df['SCA SCA90'].quantile(0.99)
+    # Predict on test set
+    y_pred_dt = dt_model.predict(X_test)
 
+    # Calculate Mean Squared Error for Decision Tree
+    mse_dt = mean_squared_error(y_test, y_pred_dt)
 
-# Filter the data to exclude extreme outliers
-df_filtered = df[df['SCA SCA90'] <= upper_limit]
+    # Feature importance from Decision Tree
+    feature_importance = pd.DataFrame({
+        'Feature': X_train.columns,
+        'Importance': dt_model.feature_importances_
+    }).sort_values(by='Importance', ascending=False)
 
-# Check the new max value
-print(df_filtered['SCA SCA90'].max())
-print("\n\n Columns: \n")
-print(df_filtered.keys())
+    return dt_model, mse_dt, feature_importance, y_pred_dt, y_test
 
+def decision_tree():
+    start = t.time()
+    # Clear terminal before running (Windows)
 
+    # Load the data
+    df = pd.read_excel('data/squadData.xlsx')
 
-# Drop rows with missing values in the Age, SCA SCA90, Position, and 90s columns
-df_filtered = df_filtered.dropna(subset=['Age', 'SCA SCA90', 'Position', '90s', 'SCA Types PassLive','SCA Types PassDead', 'GCA GCA90','SCA Types Fld', 'League','SCA Types Def','SCA SCA','SCA Types TO','GCA Types PassLive','GCA Types TO','GCA Types Sh','GCA Types Fld','GCA Types Def'])
+    # Convert specific columns to numeric
+    columns_to_convert = [
+        'GF', 'Poss', 'Take-Ons Succ', 'Carries Carries', 'Carries 1/3', 'Receiving Rec',
+        'SCA Types PassLive', 'SCA Types PassDead', 'SCA Types Sh',
+        'Touches Mid 3rd', 'Touches Att 3rd', 'Touches Att Pen', 'Touches Touches', 'Touches Def 3rd'
+    ]
+    df[columns_to_convert] = df[columns_to_convert].apply(pd.to_numeric, errors='coerce')
 
-print("\n\n \n")
-# print df_filtered df number of rows.
-print(df_filtered.shape[0])
+    # Drop rows with missing values
+    df_filtered = df.dropna(subset=columns_to_convert)
 
-print("\n\n \n")
+    # Define predictors and target variable
+    X = df_filtered[['Touches Mid 3rd', 'Touches Att 3rd', 'Touches Att Pen', 'Take-Ons Succ', 'Carries Carries', 'Carries 1/3', 'Receiving Rec']]
+    y = df_filtered['GF']
 
+    # Split the data into training and testing sets
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=104, shuffle=True)
 
-# Create dummies for the Position column and league column
-position_dummies = pd.get_dummies(df_filtered['Position'], prefix='Position', drop_first=True)
-df_encoded = pd.concat([df_filtered], axis=1)
+    # Train the Decision Tree model and return it along with performance metrics
+    dt_model, mse_dt, feature_importance, y_pred_dt, y_test = train_decision_tree(X_train, y_train, X_test, y_test)
 
-league_dummies = pd.get_dummies(df_filtered['League'], prefix='League', drop_first=True)
-df_encoded = pd.concat([df_encoded], axis=1)
+    # Print model performance metrics
+    print(f"Decision Tree Mean Squared Error on Test Set: {mse_dt:.2f}")
+    print("Decision Tree Predicted Values vs Actual Values")
+    print(pd.DataFrame({'Actual': y_test, 'Predicted': y_pred_dt}))
 
+    # Print Feature Importance
+    page_break("Feature Importance from Decision Tree:")
+    print(feature_importance)
+    end = t.time()
+    # Optional: Visualize the feature importances
+    plt.figure(figsize=(10, 6))
+    plt.barh(feature_importance['Feature'], feature_importance['Importance'])
+    plt.xlabel('Importance')
+    plt.ylabel('Feature')
+    plt.title('Feature Importance (Decision Tree)')
+    plt.show()
+    print(f"Time taken: {end - start:.2f} seconds.")
+    # Calculate time taken to run the script in hh:mm:ss
+    print(t.strftime("%H:%M:%S", t.gmtime(end - start)))
 
-# Define x and y
-features = ['SCA SCA90'] 
-X = df_encoded[features]
-y = df_encoded[ 'GCA GCA90']
-
-# Train the model
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-
-tree = DecisionTreeRegressor(max_depth=5, random_state=42)
-
-# Train the model
-tree.fit(X_train, y_train)
-
-# Predict on test data
-y_pred = tree.predict(X_test)
-
-
-mse = mean_squared_error(y_test, y_pred)
-r2 = r2_score(y_test, y_pred)
-
-print(f"Mean Squared Error: {mse:.2f}")
-print(f"R² Score: {r2:.2f}")
-
-n = len(X_test)  # Number of observations
-p = X_train.shape[1]  # Number of predictors
-
-# Calculate Adjusted R²
-adj_r2 = 1 - ((1 - r2) * (n - 1) / (n - p - 1))
-print(f"Adjusted R²: {adj_r2:.2f}")
-
-print(f"fetures: {features}")
+    # Return the trained model and performance metrics
+    return dt_model, mse_dt, feature_importance
