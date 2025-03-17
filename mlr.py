@@ -129,4 +129,13 @@ def mlr():
     print(f"Time taken: {end - start:.2f} seconds.")
     # Caclulate time taken to run the script in hh:mm:ss
     print(t.strftime("%H:%M:%S", t.gmtime(end - start)))
+    # Perform QQ plot and show the plot
+    plt.figure(figsize=(10, 6))
+    sm.qqplot(final_model.resid, line='s')
+    plt.title('Normal Q-Q Plot')
+    plt.show()
     return final_model, mse, vif_data_reduced, y_pred, y_test
+
+
+if __name__ == "__main__":
+    mlr()

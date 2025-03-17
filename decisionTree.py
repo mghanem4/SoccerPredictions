@@ -1,82 +1,99 @@
 import pandas as pd
-import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split
+import numpy as np
 from sklearn.tree import DecisionTreeRegressor
+from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
-import os
+from sklearn.tree import plot_tree
+from matplotlib.backends.backend_pdf import PdfPages
+import matplotlib.pyplot as plt
 import time as t
 
-def page_break(string: str):
-    print("\n" * 10)
-    print(string)
+def write_text_to_pdf(pdf: PdfPages, text_lines: str, lines_per_page=40):
+    """
+    Prints text line by line to a PDF, starting a new page when necessary.
 
-def train_decision_tree(X_train, y_train, X_test, y_test):
-    """Train and evaluate a Decision Tree Regressor, then return the model and its performance."""
-    # Train a Decision Tree Regressor model
-    dt_model = DecisionTreeRegressor(random_state=104)
-    dt_model.fit(X_train, y_train)
+    Parameters:
+        pdf (PdfPages): The PdfPages object to save the PDF to.
+        text_lines (str): Text to print, with lines separated by '\n'.
+        lines_per_page (int): Number of lines per page. Default is 40.
+    """
+    text_lines = text_lines.split('\n')
+    
+    if pdf is not None:
+        # Initialize variables for page handling
+        lines_on_page = 0
+        page_num = 0
+        # Loop through the text lines
+        for i, line in enumerate(text_lines):
+            # Create a new page if necessary
+            if lines_on_page == 0 or lines_on_page == lines_per_page:
+                if lines_on_page > 0:
+                    pdf.savefig(fig, bbox_inches='tight')
+                    plt.close(fig)  # Close previous figure to free memory
+                # Create a new figure for the next page
+                fig, ax = plt.subplots(figsize=(8.5, 11))  # Letter size: 8.5 x 11 inches
+                ax.axis('off')  # Turn off the axes
+                lines_on_page = 0  # Reset lines counter
+                page_num += 1
 
-    # Predict on test set
-    y_pred_dt = dt_model.predict(X_test)
+            # Calculate the vertical position for the text on the current page
+            ax.text(0.1, 1 - (lines_on_page + 1) * 0.025, line, fontsize=10, va='top', ha='left', wrap=True)
+            lines_on_page += 1
 
-    # Calculate Mean Squared Error for Decision Tree
-    mse_dt = mean_squared_error(y_test, y_pred_dt)
+        # Save the last page if there are any remaining lines
+        if lines_on_page > 0:
+            pdf.savefig(fig, bbox_inches='tight')
+            plt.close(fig)
 
-    # Feature importance from Decision Tree
-    feature_importance = pd.DataFrame({
-        'Feature': X_train.columns,
-        'Importance': dt_model.feature_importances_
-    }).sort_values(by='Importance', ascending=False)
 
-    return dt_model, mse_dt, feature_importance, y_pred_dt, y_test
+def save_plot_to_pdf(pdf, fig):
+    pdf.savefig(fig)
+    plt.close()
 
-def decision_tree():
+def decision_tree(pdf: PdfPages = None):
+    """
+    Perform Decision Tree Regression on the dataset.
+    This function saves the analysis and visualizations to a PDF.
+    """
     start = t.time()
-    # Clear terminal before running (Windows)
-
-    # Load the data
     df = pd.read_excel('data/squadData.xlsx')
 
-    # Convert specific columns to numeric
-    columns_to_convert = [
-        'GF', 'Poss', 'Take-Ons Succ', 'Carries Carries', 'Carries 1/3', 'Receiving Rec',
-        'SCA Types PassLive', 'SCA Types PassDead', 'SCA Types Sh',
-        'Touches Mid 3rd', 'Touches Att 3rd', 'Touches Att Pen', 'Touches Touches', 'Touches Def 3rd'
-    ]
-    df[columns_to_convert] = df[columns_to_convert].apply(pd.to_numeric, errors='coerce')
-
-    # Drop rows with missing values
-    df_filtered = df.dropna(subset=columns_to_convert)
-
     # Define predictors and target variable
-    X = df_filtered[['Touches Mid 3rd', 'Touches Att 3rd', 'Touches Att Pen', 'Take-Ons Succ', 'Carries Carries', 'Carries 1/3', 'Receiving Rec']]
-    y = df_filtered['GF']
+    X = df[['Touches Mid 3rd', 'Touches Att 3rd', 'Touches Att Pen', 'Take-Ons Succ', 'Carries Carries', 'Carries 1/3', 'Receiving Rec']]
+    y = df['GF']
 
     # Split the data into training and testing sets
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=104, shuffle=True)
 
-    # Train the Decision Tree model and return it along with performance metrics
-    dt_model, mse_dt, feature_importance, y_pred_dt, y_test = train_decision_tree(X_train, y_train, X_test, y_test)
+    # Train a Decision Tree model
+    model = DecisionTreeRegressor(random_state=104)
+    model.fit(X_train, y_train)
 
-    # Print model performance metrics
-    print(f"Decision Tree Mean Squared Error on Test Set: {mse_dt:.2f}")
-    print("Decision Tree Predicted Values vs Actual Values")
-    print(pd.DataFrame({'Actual': y_test, 'Predicted': y_pred_dt}))
+    # Predict on the test set
+    y_pred = model.predict(X_test)
 
-    # Print Feature Importance
-    page_break("Feature Importance from Decision Tree:")
-    print(feature_importance)
+    # Calculate MSE
+    mse = mean_squared_error(y_test, y_pred)
+    print(f"Mean Squared Error on Test Set: {mse:.2f}")
+
+    if pdf is not None:
+        # Add introductory text
+        intro_text = "Decision Tree Regression Analysis\n\nModel Summary:\n"
+        intro_text += f"Mean Squared Error on Test Set: {mse:.2f}\n\n"
+
+        # Save the model performance plot to the PDF
+        plt.figure()
+        plt.scatter(y_test, y_pred, alpha=0.7, edgecolors='b')
+        plt.xlabel('Actual Values')
+        plt.ylabel('Predicted Values')
+        plt.title('Actual vs Predicted Values (Decision Tree)')
+        save_plot_to_pdf(pdf, plt.gcf())  # Save current figure
+
+        # Additional plot: Visualize the decision tree
+        plt.figure(figsize=(12, 8))
+        plot_tree(model, filled=True, feature_names=X.columns, rounded=True)
+        plt.title('Decision Tree Visualization')
+        save_plot_to_pdf(pdf, plt.gcf())  # Save current figure
+        write_text_to_pdf(pdf, intro_text)
     end = t.time()
-    # Optional: Visualize the feature importances
-    plt.figure(figsize=(10, 6))
-    plt.barh(feature_importance['Feature'], feature_importance['Importance'])
-    plt.xlabel('Importance')
-    plt.ylabel('Feature')
-    plt.title('Feature Importance (Decision Tree)')
-    plt.show()
     print(f"Time taken: {end - start:.2f} seconds.")
-    # Calculate time taken to run the script in hh:mm:ss
-    print(t.strftime("%H:%M:%S", t.gmtime(end - start)))
-
-    # Return the trained model and performance metrics
-    return dt_model, mse_dt, feature_importance
